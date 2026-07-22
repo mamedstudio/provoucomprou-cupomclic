@@ -33,7 +33,11 @@
     /* CARD EXCLUSIVO DE VISUALIZAÇÃO DA ROUPA ENVIADA PELO LOJISTA */
     .garment-preview-card { background: var(--input-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
     .garment-title { font-size: 0.85rem; font-weight: bold; color: var(--accent-blue); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; }
-    .garment-img { max-width: 220px; width: 100%; height: auto; border-radius: 10px; border: 2px solid var(--accent-gold); box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+    .garment-img { max-width: 220px; width: 100%; height: auto; border-radius: 10px; border: 2px solid var(--accent-gold); box-shadow: 0 4px 15px rgba(0,0,0,0.4); cursor: zoom-in; transition: transform 0.2s; }
+    .garment-img:hover { transform: scale(1.03); }
+
+    /* AVISO ORIENTATIVO DE SELFIE DINÂMICO */
+    .instruction-box { background: rgba(56, 189, 248, 0.1); border: 1px solid var(--accent-blue); color: var(--accent-blue); padding: 12px; border-radius: 8px; font-size: 0.85rem; font-weight: bold; margin-bottom: 12px; text-align: center; }
 
     /* CARD DE EXPIRADO */
     .expired-card { display: none; background: rgba(239, 68, 68, 0.15); border: 2px solid var(--accent-red); padding: 25px; border-radius: 12px; text-align: center; }
@@ -52,11 +56,10 @@
     input[type="file"] { display: none; }
     .preview-filename { font-size: 0.8rem; color: var(--accent-green); margin-top: 8px; display: none; text-align: center; font-weight: bold; }
 
-    select { width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid #1e3a5f; border-radius: 8px; color: var(--text-main); font-size: 0.95rem; outline: none; }
-    
-    .btn-main { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--accent-gold), #c47c3e); border: none; border-radius: 8px; color: #000; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 10px; }
-    .btn-main:hover { opacity: 0.95; }
-    .btn-main:disabled { opacity: 0.6; cursor: not-allowed; }
+    /* BOTÃO PRINCIPAL COM IMPEDITIVO / TRAVA */
+    .btn-main { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--accent-gold), #c47c3e); border: none; border-radius: 8px; color: #000; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 10px; transition: all 0.3s ease; }
+    .btn-main:hover:not(:disabled) { opacity: 0.95; }
+    .btn-main:disabled { opacity: 0.35; cursor: not-allowed; background: #334155; color: #94a3b8; }
 
     .loading-box { display: none; text-align: center; padding: 25px; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 12px; margin-top: 25px; }
     .spinner { width: 45px; height: 45px; border: 4px solid var(--border-color); border-top: 4px solid var(--accent-gold); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
@@ -65,9 +68,14 @@
     .loading-subtext { font-size: 0.8rem; color: var(--text-muted); margin-top: 5px; }
 
     .results-container { margin-top: 25px; display: none; text-align: center; }
-    .img-preview { width: 100%; max-width: 450px; border-radius: 12px; border: 2px solid var(--accent-gold); margin-bottom: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); }
+    .img-preview { width: 100%; max-width: 450px; border-radius: 12px; border: 2px solid var(--accent-gold); margin-bottom: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); cursor: zoom-in; }
     
     .btn-buy { display: block; width: 100%; text-align: center; background: var(--accent-green); color: #000; padding: 16px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 1.1rem; margin-top: 10px; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3); }
+
+    /* MODAL DE ZOOM DA FOTO */
+    .modal-zoom { display: none; position: fixed; z-index: 9999; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; padding: 20px; }
+    .modal-zoom img { max-width: 95%; max-height: 90vh; border-radius: 12px; border: 2px solid var(--accent-gold); box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+    .modal-close { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 2rem; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -101,13 +109,19 @@
 
       <!-- CARD QUE EXIBE A FOTO DA ROUPA ENVIADA PELO LOJISTA -->
       <div id="cardRoupaLojista" class="garment-preview-card" style="display: none;">
-        <div class="garment-title">👗 PEÇA SELECIONADA PARA VOCÊ PROVAR:</div>
-        <img id="imgRoupaLojista" class="garment-img" src="" alt="Peça Selecionada">
+        <div class="garment-title">👗 PEÇA SELECIONADA PARA VOCÊ PROVAR (CLIQUE P/ AMPLIAR):</div>
+        <img id="imgRoupaLojista" class="garment-img" src="" alt="Peça Selecionada" onclick="abrirZoom(this.src)">
       </div>
 
       <!-- 1. FOTO DA CLIENTE (SELFIE) -->
       <div class="form-group">
         <label>1. TIRE UMA SELFIE OU SELECIONE SUA FOTO:</label>
+        
+        <!-- AVISO DE ORIENTAÇÃO DA SELFIE DINÂMICO -->
+        <div id="avisoInstrucao" class="instruction-box">
+          📸 ATENÇÃO: Tire uma foto sua bem nítida e iluminada!
+        </div>
+
         <div class="file-buttons">
           <label for="clienteCam" class="btn-upload">📸 Abrir Câmera</label>
           <label for="clienteFile" class="btn-upload">📁 Galeria / Fotos</label>
@@ -129,17 +143,8 @@
         <div id="statusRoupa" class="preview-filename"></div>
       </div>
 
-      <!-- 3. CATEGORIA -->
-      <div class="form-group">
-        <label>3. TIPO DA PEÇA:</label>
-        <select id="categoriaSelect">
-          <option value="dresses">👗 Peça Única / Vestidos / Macacões</option>
-          <option value="upper_body">👔 Parte de Cima (Camisas, Blusas, Jaquetas)</option>
-          <option value="lower_body">👖 Parte de Baixo (Calças, Bermudas, Saias)</option>
-        </select>
-      </div>
-
-      <button id="btnProvar" class="btn-main" onclick="provarEComprar()">⚡ Experimentar em Mim</button>
+      <!-- BOTÃO INICIALMENTE BLOQUEADO (IMPEDITIVO ATÉ ANEXAR A FOTO) -->
+      <button id="btnProvar" class="btn-main" onclick="provarEComprar()" disabled>⚡ Experimentar em Mim</button>
 
       <div id="loadingBox" class="loading-box">
         <div class="spinner"></div>
@@ -148,7 +153,8 @@
       </div>
 
       <div id="resultsBox" class="results-container">
-        <img id="fotoResultado" class="img-preview" src="" alt="Você Vestindo a Roupa">
+        <div style="font-size: 0.85rem; color: var(--accent-gold); margin-bottom: 5px; font-weight: bold;">(Clique na foto abaixo para ampliar em tela cheia)</div>
+        <img id="fotoResultado" class="img-preview" src="" alt="Você Vestindo a Roupa" onclick="abrirZoom(this.src)">
         
         <a id="btnComprar" class="btn-buy" href="#" target="_blank">
           🛍️ COMPRAR AGORA COM CUPOMCLIC
@@ -157,9 +163,16 @@
     </div>
   </div>
 
+  <!-- MODAL DE ZOOM -->
+  <div id="modalZoom" class="modal-zoom" onclick="fecharZoom()">
+    <span class="modal-close">&times;</span>
+    <img id="imgModalZoom" src="" alt="Imagem Ampliada">
+  </div>
+
   <script>
     let arquivoCliente = null;
     let arquivoRoupaPayload = null;
+    let categoriaPayload = 'upper_body'; // padrão
     let linkCheckoutFinal = '#';
     let tempoExpiracao = 0;
 
@@ -189,21 +202,28 @@
         linkCheckoutFinal = decodeURIComponent(linkCheckout);
       }
 
-      // EXIBE A FOTO DA ROUPA NO CARD E ESCONDE O FORMULÁRIO DE UPLOAD DE ROUPA!
+      if (categoria) {
+        categoriaPayload = categoria;
+      }
+
+      // AJUSTA MENSAGEM DE ATENÇÃO PARA A SELFIE COM BASE NO TIPO DA PEÇA ESCOLHIDO PELO LOJISTA
+      const aviso = document.getElementById('avisoInstrucao');
+      if (categoriaPayload === 'upper_body') {
+        aviso.innerHTML = '⚠️ <b>ATENÇÃO:</b> Tire uma foto sua que evidencie bem a sua <b>parte superior (tronco/cintura para cima)</b>.';
+      } else if (categoriaPayload === 'lower_body') {
+        aviso.innerHTML = '⚠️ <b>ATENÇÃO:</b> Tire uma foto sua que evidencie bem a sua <b>parte inferior (da cintura para baixo)</b>.';
+      } else if (categoriaPayload === 'dresses') {
+        aviso.innerHTML = '⚠️ <b>ATENÇÃO:</b> Tire uma foto de <b>corpo inteiro (da cabeça aos pés)</b> para ver o caimento perfeito do vestido/macacão.';
+      }
+
+      // EXIBE A FOTO DA ROUPA E ESCONDE O FORMULÁRIO DE SELEÇÃO DA ROUPA
       if (roupaUrl) {
         const urlDecodificada = decodeURIComponent(roupaUrl);
         arquivoRoupaPayload = urlDecodificada;
         
-        // Mostra a foto da roupa para a cliente ver
         document.getElementById('imgRoupaLojista').src = urlDecodificada;
         document.getElementById('cardRoupaLojista').style.display = 'block';
-
-        // Esconde o campo para ela não precisar enviar a roupa de novo
         document.getElementById('grupoFotoRoupa').style.display = 'none';
-      }
-
-      if (categoria) {
-        document.getElementById('categoriaSelect').value = categoria;
       }
     });
 
@@ -226,12 +246,19 @@
       }, 1000);
     }
 
+    // ATUALIZA FOTO DA CLIENTE E DESBLOQUEIA O BOTÃO
     function atualizarCliente(input) {
       if (input.files && input.files[0]) {
         arquivoCliente = input.files[0];
         const status = document.getElementById('statusCliente');
         status.innerText = '✅ Sua foto foi carregada!';
         status.style.display = 'block';
+
+        // LIBERA O BOTÃO DE EXPERIMENTAR!
+        const btn = document.getElementById('btnProvar');
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
       }
     }
 
@@ -242,6 +269,17 @@
         status.innerText = '✅ Foto da roupa carregada!';
         status.style.display = 'block';
       }
+    }
+
+    /* FUNÇÕES DE ZOOM DE IMAGEM (MODAL) */
+    function abrirZoom(src) {
+      if (!src) return;
+      document.getElementById('imgModalZoom').src = src;
+      document.getElementById('modalZoom').style.display = 'flex';
+    }
+
+    function fecharZoom() {
+      document.getElementById('modalZoom').style.display = 'none';
     }
 
     function comprimirImagem(file, maxWidth = 1024, quality = 0.8) {
@@ -274,7 +312,6 @@
     }
 
     async function provarEComprar() {
-      const categoriaSelect = document.getElementById('categoriaSelect');
       const btn = document.getElementById('btnProvar');
       const loadingBox = document.getElementById('loadingBox');
       const resultsBox = document.getElementById('resultsBox');
@@ -312,7 +349,7 @@
           body: JSON.stringify({
             human_image: pessoaBase64,
             garment_image: roupaFinal,
-            category: categoriaSelect.value,
+            category: categoriaPayload,
             description: 'fashion clothing garment'
           })
         });
