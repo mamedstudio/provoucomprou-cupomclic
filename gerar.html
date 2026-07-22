@@ -73,10 +73,7 @@
 
     <!-- 2. FOTO DA ROUPA -->
     <div class="form-group">
-      <label>2. FOTO DA PEÇA DE ROUPA (URL DA IMAGEM DO PRODUTO):</label>
-      <input type="url" id="fotoRoupaUrl" placeholder="https://sualoja.com/fotos/vestido.jpg" oninput="limparArquivoLocal()">
-      
-      <div class="divider">OU SELECIONE DO SEU DISPOSITIVO (FOTO COMPACTADA)</div>
+      <label>2. FOTO DA PEÇA DE ROUPA:</label>
       <div class="file-buttons">
         <label for="roupaCam" class="btn-upload">📸 Tirar Foto</label>
         <label for="roupaFile" class="btn-upload">📁 Galeria / Arquivo</label>
@@ -84,6 +81,9 @@
       <input type="file" id="roupaCam" accept="image/*" capture="environment" onchange="atualizarFotoRoupa(this)">
       <input type="file" id="roupaFile" accept="image/*" onchange="atualizarFotoRoupa(this)">
       <div id="statusRoupa" class="preview-filename"></div>
+
+      <div class="divider">OU COLE O LINK DA IMAGEM DA ROUPA</div>
+      <input type="url" id="fotoRoupaUrl" placeholder="https://sualoja.com/fotos/vestido.jpg" oninput="limparArquivoLocal()">
     </div>
 
     <!-- 3. CATEGORIA -->
@@ -147,7 +147,7 @@
       document.getElementById('statusRoupa').style.display = 'none';
     }
 
-    function comprimirImagemExtrema(file, maxWidth = 500, quality = 0.5) {
+    function comprimirImagem(file, maxWidth = 1024, quality = 0.8) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -187,13 +187,30 @@
       let urlRoupaFinal = '';
 
       btn.disabled = true;
-      btn.innerText = '⏳ Montando link da oferta...';
+      btn.innerText = '⏳ Enviando foto para a nuvem...';
 
       try {
         if (urlInput !== '') {
           urlRoupaFinal = urlInput;
         } else if (arquivoRoupaLocal) {
-          urlRoupaFinal = await comprimirImagemExtrema(arquivoRoupaLocal);
+          // AQUI ESTÁ O SEGREDO: Manda a foto para a api/upload.js que você já criou!
+          const base64Comprimido = await comprimirImagem(arquivoRoupaLocal);
+          
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: base64Comprimido })
+          });
+
+          const data = await res.json();
+          if (data.sucesso && data.url) {
+            urlRoupaFinal = data.url; // Pega o link curto (fal.media/...)!
+          } else {
+            alert('Erro no servidor de upload: ' + (data.erro || 'Falha ao salvar foto.'));
+            btn.disabled = false;
+            btn.innerText = '⚡ Gerar Link ProvouComprou';
+            return;
+          }
         } else {
           alert('Por favor, informe a URL da foto da roupa ou tire uma foto!');
           btn.disabled = false;
@@ -204,7 +221,7 @@
         const expiraEm = Date.now() + (validadeMinutos * 60 * 1000);
         const baseUrl = window.location.origin + '/index.html';
         
-        // Link limpo apenas com o essencial
+        // Link minúsculo gerado!
         const linkFinal = `${baseUrl}?loja=${loja}&roupa=${encodeURIComponent(urlRoupaFinal)}&categoria=${categoria}&link=${linkCupom}&expira=${expiraEm}`;
         linkFinalGlobal = linkFinal;
 
@@ -217,7 +234,7 @@
 
       } catch (err) {
         console.error(err);
-        alert('Erro ao gerar o link.');
+        alert('Erro ao conectar com a API de upload.');
       } finally {
         btn.disabled = false;
         btn.innerText = '⚡ Gerar Link ProvouComprou';
