@@ -25,11 +25,14 @@
     .logo-container { text-align: center; margin-bottom: 15px; }
     .logo-img { max-width: 200px; width: 100%; height: auto; border-radius: 8px; display: inline-block; }
 
-    /* CARD DE TIMER E LOJA */
-    .timer-card { background: rgba(230, 156, 94, 0.1); border: 1px solid var(--accent-gold); padding: 12px; border-radius: 10px; text-align: center; margin-bottom: 20px; font-weight: bold; }
-    .timer-clock { font-size: 1.1rem; color: var(--accent-gold); margin-top: 3px; }
+    /* CARD DE DESTAQUE DO CUPOMCLIC E OFERTA */
+    .cupomclic-banner { background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(230, 156, 94, 0.15)); border: 1px solid var(--accent-green); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
+    .loja-nome { font-size: 0.9rem; color: var(--accent-blue); font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+    .preco-destaque { font-size: 1.4rem; color: var(--accent-green); font-weight: bold; margin: 5px 0; }
+    .cupom-badge { display: inline-block; background: var(--accent-gold); color: #000; font-weight: bold; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; }
+    .timer-clock { font-size: 0.85rem; color: var(--accent-gold); margin-top: 8px; font-weight: bold; }
 
-    /* CARD DE LINK EXPIRADO */
+    /* CARD DE EXPIRADO */
     .expired-card { display: none; background: rgba(239, 68, 68, 0.15); border: 2px solid var(--accent-red); padding: 25px; border-radius: 12px; text-align: center; }
     .expired-title { color: var(--accent-red); font-size: 1.3rem; font-weight: bold; margin-bottom: 10px; }
 
@@ -74,26 +77,30 @@
     <div id="cardExpirado" class="expired-card">
       <div class="expired-title">⌛ Oferta Expirada!</div>
       <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">
-        Esta oferta e o provador virtual do CupomClic já encerraram a validade.
+        Esta oferta do CupomClic expirou o tempo limite.
       </p>
       <a id="btnPedirNovo" href="#" class="btn-buy" style="background: var(--accent-blue); text-decoration: none;">
         💬 Solicitar Novo Link no WhatsApp da Loja
       </a>
     </div>
 
-    <!-- TELA PRINCIPAL -->
+    <!-- TELA PRINCIPAL DA CONSUMIDORA -->
     <div id="conteudoPrincipal">
-      <div id="cardTimer" class="timer-card" style="display: none;">
-        <div id="textoLoja">Boutique CupomClic</div>
-        <div id="clockDisplay" class="timer-clock">⏳ Link Válido por: --m --s</div>
+      
+      <!-- BANNER EXCLUSIVO CUPOMCLIC (APARECE SE VIER VIA LINK) -->
+      <div id="bannerCupomClic" class="cupomclic-banner" style="display: none;">
+        <div id="lojaNome" class="loja-nome">BOUTIQUE PARCEIRA</div>
+        <div id="precoValor" class="preco-destaque"></div>
+        <div id="cupomCodigo" class="cupom-badge">CUPOMCLIC ATIVO</div>
+        <div id="clockDisplay" class="timer-clock">⏳ Oferta Válida por: --m --s</div>
       </div>
 
       <h1>✨ PROVOU, COMPROU!</h1>
       <p class="subtitle">Veja como esta peça fica no seu corpo agora mesmo</p>
 
-      <!-- FOTO DA CLIENTE -->
+      <!-- 1. FOTO DA CLIENTE (SELFIE) -->
       <div class="form-group">
-        <label>1. TIRE OU SELECIONE UMA FOTO SUA:</label>
+        <label>1. TIRE UMA SELFIE OU SELECIONE SUA FOTO:</label>
         <div class="file-buttons">
           <label for="clienteCam" class="btn-upload">📸 Abrir Câmera</label>
           <label for="clienteFile" class="btn-upload">📁 Galeria / Fotos</label>
@@ -103,7 +110,7 @@
         <div id="statusCliente" class="preview-filename"></div>
       </div>
 
-      <!-- FOTO DA ROUPA (AUTO PREENCHIDA) -->
+      <!-- 2. FOTO DA ROUPA (ESCONDE AUTOMATICAMENTE SE O LOJISTA JÁ MANDO NO LINK) -->
       <div id="grupoFotoRoupa" class="form-group">
         <label>2. FOTO DA PEÇA DE ROUPA:</label>
         <div class="file-buttons">
@@ -115,7 +122,7 @@
         <div id="statusRoupa" class="preview-filename"></div>
       </div>
 
-      <!-- CATEGORIA -->
+      <!-- 3. CATEGORIA -->
       <div class="form-group">
         <label>3. TIPO DA PEÇA:</label>
         <select id="categoriaSelect">
@@ -137,7 +144,7 @@
         <img id="fotoResultado" class="img-preview" src="" alt="Você Vestindo a Roupa">
         
         <a id="btnComprar" class="btn-buy" href="#" target="_blank">
-          🎟️ RESGATAR CUPOMCLIC E COMPRAR AGORA
+          🛍️ COMPRAR AGORA COM CUPOMCLIC
         </a>
       </div>
     </div>
@@ -154,24 +161,32 @@
       
       const loja = urlParams.get('loja');
       const roupaUrl = urlParams.get('roupa');
+      const preco = urlParams.get('preco');
+      const cupom = urlParams.get('cupom');
       const categoria = urlParams.get('categoria');
       const linkCheckout = urlParams.get('link');
       const expira = urlParams.get('expira');
 
+      // Se o link veio do lojista com dados
+      if (loja || roupaUrl || preco || cupom) {
+        document.getElementById('bannerCupomClic').style.display = 'block';
+        if (loja) document.getElementById('lojaNome').innerText = decodeURIComponent(loja);
+        if (preco) document.getElementById('precoValor').innerText = 'R$ ' + decodeURIComponent(preco);
+        if (cupom) document.getElementById('cupomCodigo').innerText = 'CUPOM: ' + decodeURIComponent(cupom);
+      }
+
       if (expira) {
         tempoExpiracao = parseInt(expira);
         iniciarContagemRegressiva();
+      } else {
+        document.getElementById('clockDisplay').style.display = 'none';
       }
 
       if (linkCheckout) {
         linkCheckoutFinal = decodeURIComponent(linkCheckout);
       }
 
-      if (loja) {
-        document.getElementById('textoLoja').innerText = '🛍️ Oferta de: ' + decodeURIComponent(loja);
-        document.getElementById('cardTimer').style.display = 'block';
-      }
-
+      // SE A FOTO DA ROUPA VEIO NA URL, ESCONDE O CAMPO DE SELECIONAR ROUPA!
       if (roupaUrl) {
         arquivoRoupaPayload = decodeURIComponent(roupaUrl);
         document.getElementById('grupoFotoRoupa').style.display = 'none';
@@ -191,7 +206,6 @@
 
         if (restante <= 0) {
           clearInterval(timerInterval);
-          // TRAVA O SISTEMA E EXIBE A TELA DE EXPIRADO
           document.getElementById('conteudoPrincipal').style.display = 'none';
           document.getElementById('cardExpirado').style.display = 'block';
         } else {
@@ -258,7 +272,7 @@
       const btnComprar = document.getElementById('btnComprar');
 
       if (!arquivoCliente) {
-        alert('Por favor, tire ou selecione uma foto sua!');
+        alert('Por favor, tire uma selfie ou selecione sua foto!');
         return;
       }
 
