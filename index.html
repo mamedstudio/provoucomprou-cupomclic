@@ -27,10 +27,8 @@
 
     /* CARD DE DESTAQUE DO CUPOMCLIC E OFERTA */
     .cupomclic-banner { background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(230, 156, 94, 0.15)); border: 1px solid var(--accent-green); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
-    .loja-nome { font-size: 0.9rem; color: var(--accent-blue); font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-    .preco-destaque { font-size: 1.4rem; color: var(--accent-green); font-weight: bold; margin: 5px 0; }
-    .cupom-badge { display: inline-block; background: var(--accent-gold); color: #000; font-weight: bold; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; }
-    .timer-clock { font-size: 0.85rem; color: var(--accent-gold); margin-top: 8px; font-weight: bold; }
+    .loja-nome { font-size: 1rem; color: var(--accent-blue); font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+    .timer-clock { font-size: 0.9rem; color: var(--accent-gold); margin-top: 5px; font-weight: bold; }
 
     /* CARD DE EXPIRADO */
     .expired-card { display: none; background: rgba(239, 68, 68, 0.15); border: 2px solid var(--accent-red); padding: 25px; border-radius: 12px; text-align: center; }
@@ -90,8 +88,6 @@
       <!-- BANNER EXCLUSIVO CUPOMCLIC (APARECE SE VIER VIA LINK) -->
       <div id="bannerCupomClic" class="cupomclic-banner" style="display: none;">
         <div id="lojaNome" class="loja-nome">BOUTIQUE PARCEIRA</div>
-        <div id="precoValor" class="preco-destaque"></div>
-        <div id="cupomCodigo" class="cupom-badge">CUPOMCLIC ATIVO</div>
         <div id="clockDisplay" class="timer-clock">⏳ Oferta Válida por: --m --s</div>
       </div>
 
@@ -110,7 +106,7 @@
         <div id="statusCliente" class="preview-filename"></div>
       </div>
 
-      <!-- 2. FOTO DA ROUPA (ESCONDE AUTOMATICAMENTE SE O LOJISTA JÁ MANDO NO LINK) -->
+      <!-- 2. FOTO DA ROUPA (ESCONDE AUTOMATICAMENTE SE O LOJISTA JÁ MANDOU NO LINK) -->
       <div id="grupoFotoRoupa" class="form-group">
         <label>2. FOTO DA PEÇA DE ROUPA:</label>
         <div class="file-buttons">
@@ -128,7 +124,7 @@
         <select id="categoriaSelect">
           <option value="dresses">👗 Peça Única / Vestidos / Macacões</option>
           <option value="upper_body">👔 Parte de Cima (Camisas, Blusas, Jaquetas)</option>
-          <option value="lower_body">👖 Parte de Baixo (Calças, Bermudas, Saias)</option>
+          <option value="lower_body">GB Parte de Baixo (Calças, Bermudas, Saias)</option>
         </select>
       </div>
 
@@ -159,27 +155,24 @@
     window.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       
-      const loja = urlParams.get('loja');
-      const roupaUrl = urlParams.get('roupa');
-      const preco = urlParams.get('preco');
-      const cupom = urlParams.get('cupom');
-      const categoria = urlParams.get('categoria');
-      const linkCheckout = urlParams.get('link');
-      const expira = urlParams.get('expira');
+      // Suporta tanto os nomes novos encurtados (l, r, c, k, e) quanto os antigos (loja, roupa, etc)
+      const loja = urlParams.get('l') || urlParams.get('loja');
+      const roupaUrl = urlParams.get('r') || urlParams.get('roupa');
+      const categoria = urlParams.get('c') || urlParams.get('categoria');
+      const linkCheckout = urlParams.get('k') || urlParams.get('link');
+      const expira = urlParams.get('e') || urlParams.get('expira');
 
-      // Se o link veio do lojista com dados
-      if (loja || roupaUrl || preco || cupom) {
+      if (loja || roupaUrl) {
         document.getElementById('bannerCupomClic').style.display = 'block';
-        if (loja) document.getElementById('lojaNome').innerText = decodeURIComponent(loja);
-        if (preco) document.getElementById('precoValor').innerText = 'R$ ' + decodeURIComponent(preco);
-        if (cupom) document.getElementById('cupomCodigo').innerText = 'CUPOM: ' + decodeURIComponent(cupom);
+        if (loja) document.getElementById('lojaNome').innerText = '🛍️ Oferta de: ' + decodeURIComponent(loja);
       }
 
       if (expira) {
         tempoExpiracao = parseInt(expira);
         iniciarContagemRegressiva();
       } else {
-        document.getElementById('clockDisplay').style.display = 'none';
+        const clockDisp = document.getElementById('clockDisplay');
+        if (clockDisp) clockDisp.style.display = 'none';
       }
 
       if (linkCheckout) {
