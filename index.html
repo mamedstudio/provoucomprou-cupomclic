@@ -30,6 +30,11 @@
     .loja-nome { font-size: 1rem; color: var(--accent-blue); font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
     .timer-clock { font-size: 0.9rem; color: var(--accent-gold); margin-top: 5px; font-weight: bold; }
 
+    /* CARD EXCLUSIVO DE VISUALIZAÇÃO DA ROUPA ENVIADA PELO LOJISTA */
+    .garment-preview-card { background: var(--input-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
+    .garment-title { font-size: 0.85rem; font-weight: bold; color: var(--accent-blue); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; }
+    .garment-img { max-width: 220px; width: 100%; height: auto; border-radius: 10px; border: 2px solid var(--accent-gold); box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+
     /* CARD DE EXPIRADO */
     .expired-card { display: none; background: rgba(239, 68, 68, 0.15); border: 2px solid var(--accent-red); padding: 25px; border-radius: 12px; text-align: center; }
     .expired-title { color: var(--accent-red); font-size: 1.3rem; font-weight: bold; margin-bottom: 10px; }
@@ -94,6 +99,12 @@
       <h1>✨ PROVOU, COMPROU!</h1>
       <p class="subtitle">Veja como esta peça fica no seu corpo agora mesmo</p>
 
+      <!-- CARD QUE EXIBE A FOTO DA ROUPA ENVIADA PELO LOJISTA -->
+      <div id="cardRoupaLojista" class="garment-preview-card" style="display: none;">
+        <div class="garment-title">👗 PEÇA SELECIONADA PARA VOCÊ PROVAR:</div>
+        <img id="imgRoupaLojista" class="garment-img" src="" alt="Peça Selecionada">
+      </div>
+
       <!-- 1. FOTO DA CLIENTE (SELFIE) -->
       <div class="form-group">
         <label>1. TIRE UMA SELFIE OU SELECIONE SUA FOTO:</label>
@@ -106,7 +117,7 @@
         <div id="statusCliente" class="preview-filename"></div>
       </div>
 
-      <!-- 2. FOTO DA ROUPA (ESCONDE AUTOMATICAMENTE SE O LOJISTA JÁ MANDOU NO LINK) -->
+      <!-- 2. FOTO DA ROUPA (SÓ APARECE SE NÃO VIER LINK DO LOJISTA) -->
       <div id="grupoFotoRoupa" class="form-group">
         <label>2. FOTO DA PEÇA DE ROUPA:</label>
         <div class="file-buttons">
@@ -124,7 +135,7 @@
         <select id="categoriaSelect">
           <option value="dresses">👗 Peça Única / Vestidos / Macacões</option>
           <option value="upper_body">👔 Parte de Cima (Camisas, Blusas, Jaquetas)</option>
-          <option value="lower_body">GB Parte de Baixo (Calças, Bermudas, Saias)</option>
+          <option value="lower_body">👖 Parte de Baixo (Calças, Bermudas, Saias)</option>
         </select>
       </div>
 
@@ -155,7 +166,6 @@
     window.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       
-      // Suporta tanto os nomes novos encurtados (l, r, c, k, e) quanto os antigos (loja, roupa, etc)
       const loja = urlParams.get('l') || urlParams.get('loja');
       const roupaUrl = urlParams.get('r') || urlParams.get('roupa');
       const categoria = urlParams.get('c') || urlParams.get('categoria');
@@ -179,9 +189,16 @@
         linkCheckoutFinal = decodeURIComponent(linkCheckout);
       }
 
-      // SE A FOTO DA ROUPA VEIO NA URL, ESCONDE O CAMPO DE SELECIONAR ROUPA!
+      // EXIBE A FOTO DA ROUPA NO CARD E ESCONDE O FORMULÁRIO DE UPLOAD DE ROUPA!
       if (roupaUrl) {
-        arquivoRoupaPayload = decodeURIComponent(roupaUrl);
+        const urlDecodificada = decodeURIComponent(roupaUrl);
+        arquivoRoupaPayload = urlDecodificada;
+        
+        // Mostra a foto da roupa para a cliente ver
+        document.getElementById('imgRoupaLojista').src = urlDecodificada;
+        document.getElementById('cardRoupaLojista').style.display = 'block';
+
+        // Esconde o campo para ela não precisar enviar a roupa de novo
         document.getElementById('grupoFotoRoupa').style.display = 'none';
       }
 
