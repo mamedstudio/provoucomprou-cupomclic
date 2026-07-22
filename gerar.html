@@ -44,6 +44,7 @@
 
     .btn-main { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--accent-gold), #c47c3e); border: none; border-radius: 8px; color: #000; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 10px; }
     .btn-main:hover { opacity: 0.95; }
+    .btn-main:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .result-box { margin-top: 25px; background: #0f1e2e; border: 1px dashed var(--accent-green); padding: 20px; border-radius: 12px; display: none; text-align: center; }
     .result-title { color: var(--accent-green); font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; }
@@ -70,9 +71,12 @@
       <input type="text" id="nomeLoja" placeholder="Ex: Boutique Elegance">
     </div>
 
-    <!-- 2. FOTO DA ROUPA (CÂMERA, ARQUIVO OU URL) -->
+    <!-- 2. FOTO DA ROUPA -->
     <div class="form-group">
-      <label>2. FOTO DA PEÇA DE ROUPA:</label>
+      <label>2. FOTO DA PEÇA DE ROUPA (URL DA IMAGEM DO PRODUTO):</label>
+      <input type="url" id="fotoRoupaUrl" placeholder="https://sualoja.com/fotos/vestido.jpg" oninput="limparArquivoLocal()">
+      
+      <div class="divider">OU SELECIONE DO SEU DISPOSITIVO (FOTO COMPACTADA)</div>
       <div class="file-buttons">
         <label for="roupaCam" class="btn-upload">📸 Tirar Foto</label>
         <label for="roupaFile" class="btn-upload">📁 Galeria / Arquivo</label>
@@ -80,9 +84,6 @@
       <input type="file" id="roupaCam" accept="image/*" capture="environment" onchange="atualizarFotoRoupa(this)">
       <input type="file" id="roupaFile" accept="image/*" onchange="atualizarFotoRoupa(this)">
       <div id="statusRoupa" class="preview-filename"></div>
-
-      <div class="divider">OU COLE O LINK DA IMAGEM DA ROUPA</div>
-      <input type="url" id="fotoRoupaUrl" placeholder="https://sualoja.com/fotos/vestido.jpg" onchange="limparArquivoLocal()">
     </div>
 
     <!-- 3. CATEGORIA -->
@@ -95,15 +96,26 @@
       </select>
     </div>
 
-    <!-- 4. LINK DO CUPOMCLIC -->
+    <!-- 4. PREÇO & CUPOMCLIC -->
     <div class="form-group">
-      <label>4. LINK DO CUPOMCLIC (OFERTA / CHECKOUT):</label>
+      <label>4. VALOR DA PEÇA (R$):</label>
+      <input type="text" id="precoPeca" placeholder="Ex: 149.90">
+    </div>
+
+    <div class="form-group">
+      <label>5. CÓDIGO DO CUPOMCLIC DE DESCONTO:</label>
+      <input type="text" id="cupomDesconto" placeholder="Ex: VIP10">
+    </div>
+
+    <!-- 6. LINK DO CHECKOUT -->
+    <div class="form-group">
+      <label>6. LINK DO CHECKOUT / PIX DO CUPOMCLIC:</label>
       <input type="url" id="linkCupomClic" placeholder="https://cupomclic.com/oferta/12345">
     </div>
 
-    <!-- 5. TEMPO DE VALIDADE DO LINK -->
+    <!-- 7. TEMPO DE VALIDADE DO LINK -->
     <div class="form-group">
-      <label>5. VALIDADE DO LINK DESTA OFERTA:</label>
+      <label>7. VALIDADE DO LINK DESTA OFERTA:</label>
       <select id="validadeSelect">
         <option value="15">⏳ 15 Minutos (Urgência Alta)</option>
         <option value="30">⏳ 30 Minutos</option>
@@ -113,7 +125,7 @@
       </select>
     </div>
 
-    <button class="btn-main" onclick="gerarLinkOferta()">⚡ Gerar Link ProvouComprou</button>
+    <button id="btnGerar" class="btn-main" onclick="gerarLinkOferta()">⚡ Gerar Link ProvouComprou</button>
 
     <!-- RESULTADO -->
     <div id="resultBox" class="result-box">
@@ -136,7 +148,7 @@
         arquivoRoupaLocal = input.files[0];
         document.getElementById('fotoRoupaUrl').value = '';
         const status = document.getElementById('statusRoupa');
-        status.innerText = '✅ Foto da roupa carregada: ' + input.files[0].name;
+        status.innerText = '✅ Foto da roupa selecionada: ' + input.files[0].name;
         status.style.display = 'block';
       }
     }
@@ -146,7 +158,8 @@
       document.getElementById('statusRoupa').style.display = 'none';
     }
 
-    function comprimirImagem(file, maxWidth = 1024, quality = 0.8) {
+    // Comprime a foto local para o menor tamanho possível antes de montar a URL
+    function comprimirImagemExtrema(file, maxWidth = 500, quality = 0.5) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -176,38 +189,54 @@
     }
 
     async function gerarLinkOferta() {
+      const btn = document.getElementById('btnGerar');
       const loja = encodeURIComponent(document.getElementById('nomeLoja').value.trim());
       const urlInput = document.getElementById('fotoRoupaUrl').value.trim();
       const categoria = document.getElementById('categoriaSelect').value;
+      const preco = encodeURIComponent(document.getElementById('precoPeca').value.trim());
+      const cupom = encodeURIComponent(document.getElementById('cupomDesconto').value.trim());
       const linkCupom = encodeURIComponent(document.getElementById('linkCupomClic').value.trim());
       const validadeMinutos = parseInt(document.getElementById('validadeSelect').value);
 
-      let roupaFinal = '';
+      let urlRoupaFinal = '';
 
-      if (arquivoRoupaLocal) {
-        // Se tirou foto na hora, converte para base64 comprimido
-        roupaFinal = await comprimirImagem(arquivoRoupaLocal);
-      } else if (urlInput !== '') {
-        roupaFinal = urlInput;
-      } else {
-        alert('Por favor, tire uma foto da roupa, envie um arquivo ou cole o link!');
-        return;
+      btn.disabled = true;
+      btn.innerText = '⏳ Montando link da oferta...';
+
+      try {
+        if (urlInput !== '') {
+          // Se colou o link da imagem (URL) -> O LINK FICA MINÚSCULO!
+          urlRoupaFinal = urlInput;
+        } else if (arquivoRoupaLocal) {
+          // Se enviou foto do celular -> Comprime ao máximo
+          urlRoupaFinal = await comprimirImagemExtrema(arquivoRoupaLocal);
+        } else {
+          alert('Por favor, informe a URL da foto da roupa ou tire uma foto!');
+          btn.disabled = false;
+          btn.innerText = '⚡ Gerar Link ProvouComprou';
+          return;
+        }
+
+        const expiraEm = Date.now() + (validadeMinutos * 60 * 1000);
+        const baseUrl = window.location.origin + '/index.html';
+        
+        const linkFinal = `${baseUrl}?loja=${loja}&roupa=${encodeURIComponent(urlRoupaFinal)}&preco=${preco}&cupom=${cupom}&categoria=${categoria}&link=${linkCupom}&expira=${expiraEm}`;
+        linkFinalGlobal = linkFinal;
+
+        document.getElementById('urlGerada').innerText = linkFinal;
+        
+        const mensagemWhatsApp = `Olá! Mandei essa oferta exclusiva para você! 👗✨\n\nProve este modelo no seu corpo agora pelo nosso Provador Virtual do CupomClic (Oferta por tempo limitado):\n👉 ${linkFinal}`;
+        
+        document.getElementById('btnWhatsApp').href = `https://api.whatsapp.com/send?text=${encodeURIComponent(mensagemWhatsApp)}`;
+        document.getElementById('resultBox').style.display = 'block';
+
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao gerar o link.');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '⚡ Gerar Link ProvouComprou';
       }
-
-      // Calcula timestamp exato de expiração no futuro
-      const expiraEm = Date.now() + (validadeMinutos * 60 * 1000);
-
-      const baseUrl = window.location.origin + '/index.html';
-      
-      const linkFinal = `${baseUrl}?loja=${loja}&roupa=${encodeURIComponent(roupaFinal)}&categoria=${categoria}&link=${linkCupom}&expira=${expiraEm}`;
-      linkFinalGlobal = linkFinal;
-
-      document.getElementById('urlGerada').innerText = linkFinal;
-      
-      const mensagemWhatsApp = `Olá! Mandei essa oferta exclusiva para você! 👗✨\n\nProve este modelo no seu corpo agora pelo nosso Provador Virtual do CupomClic (Link válido por tempo limitado):\n👉 ${linkFinal}`;
-      
-      document.getElementById('btnWhatsApp').href = `https://api.whatsapp.com/send?text=${encodeURIComponent(mensagemWhatsApp)}`;
-      document.getElementById('resultBox').style.display = 'block';
     }
 
     function copiarLink() {
