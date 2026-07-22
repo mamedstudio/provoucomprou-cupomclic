@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador de Ofertas - ProvouComprou CupomClic</title>
+  <style>
+    :root {
+      --bg-color: #0d131a;
+      --card-bg: #151d27;
+      --input-bg: #0b0f14;
+      --border-color: #243242;
+      --text-main: #f0f4f8;
+      --text-muted: #94a3b8;
+      --accent-gold: #e69c5e;
+      --accent-blue: #38bdf8;
+      --accent-green: #22c55e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; padding: 20px; display: flex; justify-content: center; align-items: flex-start; }
+    .container { width: 100%; max-width: 650px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); margin-top: 10px; }
+    
+    .logo-container { text-align: center; margin-bottom: 15px; }
+    .logo-img { max-width: 200px; width: 100%; height: auto; border-radius: 8px; display: inline-block; }
+
+    h1 { color: var(--accent-gold); font-size: 1.4rem; text-align: center; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+    p.subtitle { text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 25px; }
+    
+    .form-group { margin-bottom: 15px; background: var(--input-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); }
+    label { display: block; font-size: 0.8rem; font-weight: bold; color: var(--accent-blue); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
+    
+    input[type="text"], input[type="url"], select { width: 100%; padding: 12px; background: var(--card-bg); border: 1px solid #1e3a5f; border-radius: 8px; color: var(--text-main); font-size: 0.95rem; outline: none; }
+    input:focus, select:focus { border-color: var(--accent-gold); }
+
+    .btn-main { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--accent-gold), #c47c3e); border: none; border-radius: 8px; color: #000; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 10px; }
+    .btn-main:hover { opacity: 0.95; }
+
+    .result-box { margin-top: 25px; background: #0f1e2e; border: 1px dashed var(--accent-green); padding: 20px; border-radius: 12px; display: none; text-align: center; }
+    .result-title { color: var(--accent-green); font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; }
+    
+    .generated-url { background: var(--input-bg); padding: 12px; border-radius: 8px; word-break: break-all; font-family: monospace; font-size: 0.85rem; color: var(--accent-blue); margin-bottom: 15px; border: 1px solid var(--border-color); }
+
+    .btn-action { display: inline-block; width: 100%; padding: 14px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 1rem; margin-top: 8px; cursor: pointer; border: none; }
+    .btn-whatsapp { background: #25d366; color: #fff; }
+    .btn-copy { background: #38bdf8; color: #000; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo-container">
+      <img src="logo.png" alt="CupomClic" class="logo-img">
+    </div>
+
+    <h1>💼 PAINEL DO LOJISTA</h1>
+    <p class="subtitle">Crie ofertas com Provador Virtual Exclusivo para suas clientes</p>
+
+    <!-- NOME DA LOJA -->
+    <div class="form-group">
+      <label>1. NOME DA SUA LOJA:</label>
+      <input type="text" id="nomeLoja" placeholder="Ex: Boutique Chic">
+    </div>
+
+    <!-- LINK DA FOTO DA ROUPA -->
+    <div class="form-group">
+      <label>2. LINK DA FOTO DA ROUPA (URL DA IMAGEM DO PRODUTO):</label>
+      <input type="url" id="fotoRoupa" placeholder="https://sualoja.com/fotos/vestido-floral.jpg">
+    </div>
+
+    <!-- CATEGORIA DA PEÇA -->
+    <div class="form-group">
+      <label>3. TIPO DA PEÇA DE ROUPA:</label>
+      <select id="categoriaSelect">
+        <option value="dresses">👗 Peça Única / Vestidos / Macacões</option>
+        <option value="upper_body">👔 Parte de Cima (Camisas, Blusas, Jaquetas)</option>
+        <option value="lower_body">GB Parte de Baixo (Calças, Bermudas, Saias)</option>
+      </select>
+    </div>
+
+    <!-- PREÇO E CUPOM -->
+    <div class="form-group">
+      <label>4. VALOR DA PEÇA (R$):</label>
+      <input type="text" id="precoPeca" placeholder="Ex: 149.90">
+    </div>
+
+    <div class="form-group">
+      <label>5. CÓDIGO DO CUPOMCLIC DE DESCONTO:</label>
+      <input type="text" id="cupomDesconto" placeholder="Ex: CUPOMCLIC10">
+    </div>
+
+    <!-- LINK DE PAGAMENTO / CHECKOUT -->
+    <div class="form-group">
+      <label>6. LINK DO SEU CHECKOUT / PIX / WHATSAPP DE VENDAS:</label>
+      <input type="url" id="linkCheckout" placeholder="https://pagamento.sualoja.com/link-da-peca">
+    </div>
+
+    <button class="btn-main" onclick="gerarLinkOferta()">⚡ Gerar Link ProvouComprou</button>
+
+    <!-- ÁREA DE RESULTADO DO LOJISTA -->
+    <div id="resultBox" class="result-box">
+      <div class="result-title">🎉 Link da Oferta Gerado com Sucesso!</div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Envie este link para a cliente provar a roupa no corpo dela antes de comprar:</p>
+      
+      <div id="urlGerada" class="generated-url"></div>
+
+      <button class="btn-action btn-copy" onclick="copiarLink()">📋 Copiar Link da Oferta</button>
+      <a id="btnWhatsApp" class="btn-action btn-whatsapp" href="#" target="_blank" style="margin-top: 10px; display: block; text-align: center;">💬 Enviar no WhatsApp da Cliente</a>
+    </div>
+  </div>
+
+  <script>
+    let linkFinalGlobal = '';
+
+    function gerarLinkOferta() {
+      const loja = encodeURIComponent(document.getElementById('nomeLoja').value.trim());
+      const roupa = encodeURIComponent(document.getElementById('fotoRoupa').value.trim());
+      const categoria = document.getElementById('categoriaSelect').value;
+      const preco = encodeURIComponent(document.getElementById('precoPeca').value.trim());
+      const cupom = encodeURIComponent(document.getElementById('cupomDesconto').value.trim());
+      const linkCheckout = encodeURIComponent(document.getElementById('linkCheckout').value.trim());
+
+      if (!roupa) {
+        alert('Por favor, informe o link da foto da peça de roupa!');
+        return;
+      }
+
+      // Constrói a URL base dinâmica do próprio domínio
+      const baseUrl = window.location.origin + '/index.html';
+      
+      // Monta o link único com todas as variáveis
+      const linkFinal = `${baseUrl}?loja=${loja}&roupa=${roupa}&categoria=${categoria}&preco=${preco}&cupom=${cupom}&link=${linkCheckout}`;
+      linkFinalGlobal = linkFinal;
+
+      document.getElementById('urlGerada').innerText = linkFinal;
+      
+      // Mensagem personalizada pronta para o WhatsApp do Lojista
+      const mensagemWhatsApp = `Olá! Mandei essa oferta exclusiva para você! 👗✨\n\nProve este modelo no seu próprio corpo agora pelo nosso Provador Virtual antes de comprar:\n👉 ${linkFinal}`;
+      
+      const btnWhatsApp = document.getElementById('btnWhatsApp');
+      btnWhatsApp.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(mensagemWhatsApp)}`;
+
+      document.getElementById('resultBox').style.display = 'block';
+    }
+
+    function copiarLink() {
+      if (!linkFinalGlobal) return;
+      navigator.clipboard.writeText(linkFinalGlobal);
+      alert('Link copiado para a área de transferência!');
+    }
+  </script>
+</body>
+</html>
